@@ -1,11 +1,10 @@
-// server.js
-require("dotenv").config(); // 1. Run this FIRST!
+require("dotenv").config();
 
 const express = require("express");
 const cookieParser = require("cookie-parser");
 const helmet = require("helmet");
 const cors = require("cors");
-require("./config/db"); // Successfully reads the loaded environment variables
+require("./config/db");
 
 const authRoutes = require("./routes/auth.routes");
 const { globalLimiter } = require("./middleware/rateLimiter");
@@ -18,7 +17,6 @@ const usersRoutes = require("./routes/users.routes");
 
 const app = express();
 
-// Trust proxy header for rate limiting accuracy behind CDNs/Proxies (e.g., Render, Heroku)
 app.set("trust proxy", 1);
 
 app.use(helmet());
@@ -32,6 +30,11 @@ app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
+// Root route handler to stop 404s on home URL
+app.get("/", (req, res) => {
+  res.status(200).json({ message: "Server is up and running" });
+});
+
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/post", postRoutes);
@@ -40,9 +43,8 @@ app.use("/api/post", likesRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/users", followRoutes);
 
-app.use(errorHandler); // Global error middleware catches everything
+app.use(errorHandler);
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// DO NOT USE app.listen() FOR VERCEL
+// Export the app for Vercel to use as a serverless function
+module.exports = app;
