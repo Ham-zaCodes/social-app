@@ -1,6 +1,7 @@
+// controllers/users.controller.js
 const pool = require("../config/db");
 
-// 1. Get User Profile (Public) - FIXED count calculation using clean subqueries
+// 1. Get User Profile (Public) - Fetch by Username
 exports.getUserProfile = async (req, res, next) => {
   try {
     const username = req.params.username;
@@ -32,7 +33,7 @@ exports.getUserProfile = async (req, res, next) => {
       `SELECT 
         p.id, 
         p.content, 
-        p.media_url, 
+        p.image_url, 
         p.created_at,
         COUNT(DISTINCT l.user_id)::int AS likes_count,
         COUNT(DISTINCT c.id)::int AS comments_count
@@ -54,13 +55,71 @@ exports.getUserProfile = async (req, res, next) => {
   }
 };
 
-// 2. Update User Profile (Protected)
+// 2. Get User Profile By ID (Protected) - Essential for Frontend profile dashboard tabs
+exports.getUserProfileById = async (req, res, next) => {
+  try {
+    const userId = req.params.id;
+
+    const userQuery = await pool.query(
+      `SELECT 
+        u.id, 
+        u.username, 
+        u.email, 
+        u.avatar_url, 
+        u.bio, 
+        u.created_at,
+        (SELECT COUNT(*)::int FROM follows WHERE following_id = u.id) AS followers_count,
+        (SELECT COUNT(*)::int FROM follows WHERE follower_id = u.id) AS following_count
+       FROM users u
+       WHERE u.id = $1`,
+      [userId],
+    );
+
+    if (userQuery.rows.length === 0) {
+      return res.status(404).json({ error: { message: "User not found" } });
+    }
+
+    const user = userQuery.rows[0];
+
+    const postsQuery = await pool.query(
+      `SELECT 
+        p.id, 
+        p.content, 
+        p.image_url, 
+        p.created_at,
+        COUNT(DISTINCT l.user_id)::int AS likes_count,
+        COUNT(DISTINCT c.id)::int AS comments_count
+       FROM posts p
+       LEFT JOIN likes l ON p.id = l.post_id
+       LEFT JOIN comments c ON p.id = c.post_id
+       WHERE p.user_id = $1
+       GROUP BY p.id
+       ORDER BY p.created_at DESC`,
+      [userId],
+    );
+
+    res.status(200).json({
+      profile: user,
+      posts: postsQuery.rows,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// 3. Update User Profile (Protected - Supporting text bio & Multer avatar image uploading)
 exports.updateProfile = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const { bio, avatar_url } = req.body;
+    const { bio } = req.body;
 
-    // Direct mapping updates, falling back to database state if undefined (allowing null values to go through)
+    // Capture upload path if multer processed an avatar image file
+    let finalAvatarUrl = null;
+    if (req.file) {
+      finalAvatarUrl = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
+    }
+
+    // Direct mapping updates. If bio is undefined or file is not sent, retain DB values
     const result = await pool.query(
       `UPDATE users 
        SET bio = CASE WHEN $1::text IS NULL THEN bio ELSE $1 END, 
@@ -69,23 +128,24 @@ exports.updateProfile = async (req, res, next) => {
        RETURNING id, username, email, avatar_url, bio`,
       [
         bio === undefined ? null : bio,
-        avatar_url === undefined ? null : avatar_url,
+        finalAvatarUrl, // Falls back to current state inside DB if NULL
         userId,
       ],
     );
 
-    res
-      .status(200)
-      .json({ user: result.rows[0], message: "Profile updated successfully" });
+    res.status(200).json({
+      user: result.rows[0],
+      message: "Profile updated successfully",
+    });
   } catch (err) {
     next(err);
   }
 };
 
-// 3. Search Users (Public)
+// 4. Search Users (Public)
 exports.searchUsers = async (req, res, next) => {
   try {
-    const { q } = req.query; // e.g., /api/users/search?q=tester
+    const { q } = req.query;
 
     if (!q || q.trim() === "") {
       return res
@@ -93,7 +153,6 @@ exports.searchUsers = async (req, res, next) => {
         .json({ error: { message: "Search query cannot be empty" } });
     }
 
-    // ILIKE performs a case-insensitive search
     const result = await pool.query(
       `SELECT id, username, avatar_url, bio 
        FROM users 
@@ -108,12 +167,11 @@ exports.searchUsers = async (req, res, next) => {
   }
 };
 
-// 4. Get Follow Suggestions (Protected) - NEW ADDITION
+// 5. Get Follow Suggestions (Protected)
 exports.getSuggestions = async (req, res, next) => {
   try {
     const currentUserId = req.user.id;
 
-    // Fetch users who aren't the current user and are not currently followed by them
     const result = await pool.query(
       `SELECT id, username, avatar_url, bio 
        FROM users 
@@ -126,6 +184,44 @@ exports.getSuggestions = async (req, res, next) => {
     );
 
     res.status(200).json({ users: result.rows });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// 6. Get Notifications (Protected)
+exports.getNotifications = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+
+    const result = await pool.query(
+      `SELECT n.*, u.username as sender_username, u.avatar_url as sender_avatar
+       FROM notifications n
+       JOIN users u ON n.sender_id = u.id
+       WHERE n.receiver_id = $1
+       ORDER BY n.created_at DESC`,
+      [userId],
+    );
+
+    res.status(200).json(result.rows);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// 7. Mark All Notifications as Read (Protected)
+exports.markNotificationsAsRead = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+
+    await pool.query(
+      `UPDATE notifications 
+       SET is_read = TRUE 
+       WHERE receiver_id = $1`,
+      [userId],
+    );
+
+    res.status(200).json({ success: true });
   } catch (err) {
     next(err);
   }
