@@ -61,11 +61,21 @@ exports.getFeed = async (req, res, next) => {
   }
 };
 
-// 3. Delete a Post (Protected - Owner Check)
+// controllers/post.controller.js
+
 exports.deletePost = async (req, res, next) => {
   try {
     const postId = req.params.id;
-    const userId = req.user.id; // From our auth middleware
+
+    // FORCE cast the authenticated user's ID to a Number
+    const userId = Number(req.user.id);
+
+    // Fail early if the session token somehow contains a corrupted or missing ID
+    if (isNaN(userId)) {
+      return res
+        .status(401)
+        .json({ error: { message: "Invalid user session" } });
+    }
 
     // Check if post exists and who owns it
     const postQuery = await pool.query(
@@ -77,13 +87,14 @@ exports.deletePost = async (req, res, next) => {
       return res.status(404).json({ error: { message: "Post not found" } });
     }
 
-    if (postQuery.rows[0].user_id != userId) {
+    // Now we can strictly compare integers safely!
+    if (postQuery.rows[0].user_id !== userId) {
       return res
         .status(403)
         .json({ error: { message: "Unauthorized to delete this post" } });
     }
 
-    // Delete the post (likes and comments cascade automatically because of DB schema rules)
+    // Delete the post
     await pool.query("DELETE FROM posts WHERE id = $1", [postId]);
 
     res.status(200).json({ message: "Post deleted successfully" });
