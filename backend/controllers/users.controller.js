@@ -1,11 +1,11 @@
 const pool = require("../config/db");
 
-// 1. Get User Profile (Public)
+// 1. Get User Profile (Public) - FIXED count calculation using clean subqueries
 exports.getUserProfile = async (req, res, next) => {
   try {
     const username = req.params.username;
 
-    // Fetch user details + follow counts in one query
+    // Fetch user details + follow counts using highly accurate subqueries
     const userQuery = await pool.query(
       `SELECT 
         u.id, 
@@ -14,13 +14,10 @@ exports.getUserProfile = async (req, res, next) => {
         u.avatar_url, 
         u.bio, 
         u.created_at,
-        COUNT(DISTINCT f1.follower_id)::int AS followers_count,
-        COUNT(DISTINCT f2.following_id)::int AS following_count
+        (SELECT COUNT(*)::int FROM follows WHERE following_id = u.id) AS followers_count,
+        (SELECT COUNT(*)::int FROM follows WHERE follower_id = u.id) AS following_count
        FROM users u
-       LEFT JOIN follows f1 ON u.id = f1.following_id
-       LEFT JOIN follows f2 ON u.id = f2.follower_id
-       WHERE u.username = $1
-       GROUP BY u.id`,
+       WHERE u.username = $1`,
       [username],
     );
 
@@ -63,13 +60,18 @@ exports.updateProfile = async (req, res, next) => {
     const userId = req.user.id;
     const { bio, avatar_url } = req.body;
 
+    // Direct mapping updates, falling back to database state if undefined (allowing null values to go through)
     const result = await pool.query(
       `UPDATE users 
-       SET bio = COALESCE($1, bio), 
-           avatar_url = COALESCE($2, avatar_url)
+       SET bio = CASE WHEN $1::text IS NULL THEN bio ELSE $1 END, 
+           avatar_url = CASE WHEN $2::text IS NULL THEN avatar_url ELSE $2 END
        WHERE id = $3
        RETURNING id, username, email, avatar_url, bio`,
-      [bio || null, avatar_url || null, userId],
+      [
+        bio === undefined ? null : bio,
+        avatar_url === undefined ? null : avatar_url,
+        userId,
+      ],
     );
 
     res
@@ -98,6 +100,29 @@ exports.searchUsers = async (req, res, next) => {
        WHERE username ILIKE $1 
        LIMIT 10`,
       [`%${q}%`],
+    );
+
+    res.status(200).json({ users: result.rows });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// 4. Get Follow Suggestions (Protected) - NEW ADDITION
+exports.getSuggestions = async (req, res, next) => {
+  try {
+    const currentUserId = req.user.id;
+
+    // Fetch users who aren't the current user and are not currently followed by them
+    const result = await pool.query(
+      `SELECT id, username, avatar_url, bio 
+       FROM users 
+       WHERE id != $1 
+       AND id NOT IN (
+         SELECT following_id FROM follows WHERE follower_id = $1
+       )
+       LIMIT 5`,
+      [currentUserId],
     );
 
     res.status(200).json({ users: result.rows });
