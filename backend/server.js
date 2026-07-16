@@ -20,7 +20,15 @@ const app = express();
 app.set("trust proxy", 1);
 
 app.use(helmet());
-app.use(cors({ origin: "http://localhost:5500", credentials: true }));
+
+// UPDATE THIS LINE: Allow your frontend running on port 3000
+app.use(
+  cors({
+    origin: ["http://localhost:3000", "http://localhost:5500"],
+    credentials: true,
+  }),
+);
+
 app.use(express.json());
 app.use(cookieParser());
 app.use(globalLimiter);
@@ -30,7 +38,7 @@ app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
-// Root route handler to stop 404s on home URL
+// Root route handler
 app.get("/", (req, res) => {
   res.status(200).json({ message: "Server is up and running" });
 });
@@ -45,6 +53,4 @@ app.use("/api/users", followRoutes);
 
 app.use(errorHandler);
 
-// DO NOT USE app.listen() FOR VERCEL
-// Export the app for Vercel to use as a serverless function
 module.exports = app;
