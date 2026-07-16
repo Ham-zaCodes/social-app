@@ -77,7 +77,7 @@ exports.deletePost = async (req, res, next) => {
       return res.status(404).json({ error: { message: "Post not found" } });
     }
 
-    if (postQuery.rows[0].user_id !== userId) {
+    if (postQuery.rows[0].user_id != userId) {
       return res
         .status(403)
         .json({ error: { message: "Unauthorized to delete this post" } });
