@@ -16,7 +16,7 @@ const followRoutes = require("./routes/follow.routes");
 const commentsRoutes = require("./routes/comments.routes");
 const likesRoutes = require("./routes/likes.routes");
 const usersRoutes = require("./routes/users.routes");
-const messageRoutes = require("./routes/messages.routes"); // ADDED: Direct Messages Routes
+//const messageRoutes = require("./routes/messages.routes"); // ADDED: Direct Messages Routes
 
 const app = express();
 
@@ -69,7 +69,7 @@ app.use("/api/post", commentsRoutes);
 app.use("/api/post", likesRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/users", followRoutes);
-app.use("/api/messages", messageRoutes); // ADDED: Direct Messages Routing
+//app.use("/api/messages", messageRoutes); // ADDED: Direct Messages Routing
 
 app.use(errorHandler);
 
