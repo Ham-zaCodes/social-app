@@ -158,9 +158,16 @@ exports.getNotifications = async (req, res, next) => {
     const userId = req.user.id;
 
     const result = await pool.query(
-      `SELECT n.*, u.username as sender_username, u.avatar_url as sender_avatar
+      `SELECT 
+        n.*,
+        u.username as sender_username,
+        u.avatar_url as sender_avatar,
+        c.content as comment_text
        FROM notifications n
        JOIN users u ON n.sender_id = u.id
+       LEFT JOIN comments c ON n.type = 'COMMENT'
+         AND c.post_id = n.entity_id
+         AND c.user_id = n.sender_id
        WHERE n.receiver_id = $1
        ORDER BY n.created_at DESC`,
       [userId],
