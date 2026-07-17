@@ -20,12 +20,10 @@ exports.createPost = async (req, res, next) => {
       allowedAttributes: {}, // Strip all attributes
     });
 
-    // Capture Cloudinary CDN URL from req.file.path instead of building a local relative path
+    // Frontend se Cloudinary URL seedha aata hai
     let finalImageUrl = null;
-    if (req.file && req.file.path) {
-      finalImageUrl = req.file.path; // Cloudinary directly provides the https URL here
-    } else if (media_url && media_url.trim() !== "") {
-      finalImageUrl = media_url; // Fallback to provided text URL if any
+    if (media_url && media_url.trim() !== "") {
+      finalImageUrl = media_url;
     }
 
     // Insert directly into database matching schema updates

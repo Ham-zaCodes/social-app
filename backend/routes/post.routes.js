@@ -10,8 +10,8 @@ router.get("/feed", protect, postController.getHomeFeed);
 // Global public feed access
 router.get("/", postController.getFeed);
 
-// Create Post - Handles Cloudinary upload via multer-storage-cloudinary
-router.post("/", protect, upload.single("image"), postController.createPost);
+// Create Post - accepts media_url (Cloudinary URL from frontend direct upload)
+router.post("/", protect, postController.createPost);
 
 // Edit post
 router.put("/:id", protect, postController.editPost);
