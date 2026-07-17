@@ -45,6 +45,17 @@ exports.createPost = async (req, res, next) => {
 // 2. Get Feed / All Posts (Includes author details & counts)
 exports.getFeed = async (req, res, next) => {
   try {
+    // Optional auth — agar token ho to liked_by_user bhi return karo
+    let currentUserId = null;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      try {
+        const jwt = require("jsonwebtoken");
+        const decoded = jwt.verify(authHeader.split(" ")[1], process.env.JWT_SECRET);
+        currentUserId = decoded.id;
+      } catch (_) {}
+    }
+
     const result = await pool.query(
       `SELECT 
         p.id, 
@@ -55,13 +66,17 @@ exports.getFeed = async (req, res, next) => {
         u.username AS author_username,
         u.avatar_url AS author_avatar,
         COUNT(DISTINCT l.user_id)::int AS likes_count,
-        COUNT(DISTINCT c.id)::int AS comments_count
+        COUNT(DISTINCT c.id)::int AS comments_count,
+        CASE WHEN $1::int IS NOT NULL THEN
+          EXISTS(SELECT 1 FROM likes WHERE post_id = p.id AND user_id = $1::int)
+        ELSE false END AS liked_by_user
       FROM posts p
       JOIN users u ON p.user_id = u.id
       LEFT JOIN likes l ON p.id = l.post_id
       LEFT JOIN comments c ON p.id = c.post_id
       GROUP BY p.id, u.id
       ORDER BY p.created_at DESC`,
+      [currentUserId]
     );
 
     res.status(200).json({ posts: result.rows });

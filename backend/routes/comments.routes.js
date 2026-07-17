@@ -6,5 +6,6 @@ const protect = require("../middleware/auth");
 // Comments endpoints
 router.post("/:id/comment", protect, commentsController.addComment);
 router.get("/:id/comments", commentsController.getComments);
+router.delete("/:id/comments/:commentId", protect, commentsController.deleteComment);
 
 module.exports = router;

@@ -73,3 +73,29 @@ exports.getComments = async (req, res, next) => {
     next(err);
   }
 };
+
+// 3. Delete a Comment (Protected - only comment owner)
+exports.deleteComment = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const commentId = req.params.commentId;
+
+    const commentQuery = await pool.query(
+      "SELECT user_id FROM comments WHERE id = $1",
+      [commentId]
+    );
+
+    if (commentQuery.rows.length === 0) {
+      return res.status(404).json({ error: { message: "Comment not found" } });
+    }
+
+    if (commentQuery.rows[0].user_id !== userId) {
+      return res.status(403).json({ error: { message: "Unauthorized" } });
+    }
+
+    await pool.query("DELETE FROM comments WHERE id = $1", [commentId]);
+    res.status(200).json({ message: "Comment deleted" });
+  } catch (err) {
+    next(err);
+  }
+};
