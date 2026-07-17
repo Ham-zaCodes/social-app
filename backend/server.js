@@ -16,7 +16,7 @@ const followRoutes = require("./routes/follow.routes");
 const commentsRoutes = require("./routes/comments.routes");
 const likesRoutes = require("./routes/likes.routes");
 const usersRoutes = require("./routes/users.routes");
-//const messageRoutes = require("./routes/messages.routes"); // ADDED: Direct Messages Routes
+//const messageRoutes = require("./routes/messages.routes"); // Disabled temporarily to prevent missing file crashes
 
 const app = express();
 
@@ -29,11 +29,21 @@ app.use(
   }),
 );
 
-// UPDATE THIS LINE: Allow your frontend running on port 3000
+// 1. Explicitly handle OPTIONS preflight requests globally before standard routing to prevent Vercel CORS drops
+app.options("*", cors());
+
+// 2. Comprehensive CORS configuration for local development and live deployments
 app.use(
   cors({
-    origin: ["http://localhost:3000", "http://localhost:5500"],
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:3001", // Fallback for busy local ports
+      "http://localhost:5500",
+      "https://social-app-nine-zeta.vercel.app", // Your frontend domain
+    ],
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
   }),
 );
 
@@ -42,13 +52,15 @@ app.use(cookieParser());
 app.use(globalLimiter);
 
 // --- STATIC FILES & UPLOAD CONFIGURATION ---
-// Ensure the local upload folder exists dynamically on startup
+// Bypassed on production to avoid read-only filesystem crash on Vercel
 const uploadDir = path.join(__dirname, "uploads");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+if (process.env.NODE_ENV !== "production") {
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
 }
 
-// Serve uploaded files statically so frontend can access them (e.g., http://localhost:PORT/uploads/filename)
+// Serve uploaded files statically
 app.use("/uploads", express.static(uploadDir));
 // -------------------------------------------
 
@@ -69,7 +81,7 @@ app.use("/api/post", commentsRoutes);
 app.use("/api/post", likesRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/users", followRoutes);
-//app.use("/api/messages", messageRoutes); // ADDED: Direct Messages Routing
+//app.use("/api/messages", messageRoutes); // Disabled temporarily to prevent missing file crashes
 
 app.use(errorHandler);
 
