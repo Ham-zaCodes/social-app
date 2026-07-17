@@ -42,7 +42,19 @@ exports.addComment = async (req, res, next) => {
     // Trigger Notification: Post owner ko comment alert bhejein
     await createNotification(postOwnerId, userId, "COMMENT", postId);
 
-    res.status(201).json({ comment: result.rows[0] });
+    // username + avatar_url bhi fetch karo taake frontend mein show ho sake
+    const userRow = await pool.query(
+      "SELECT username, avatar_url FROM users WHERE id = $1",
+      [userId]
+    );
+
+    res.status(201).json({
+      comment: {
+        ...result.rows[0],
+        username: userRow.rows[0]?.username,
+        avatar_url: userRow.rows[0]?.avatar_url,
+      },
+    });
   } catch (err) {
     next(err);
   }
@@ -89,7 +101,7 @@ exports.deleteComment = async (req, res, next) => {
       return res.status(404).json({ error: { message: "Comment not found" } });
     }
 
-    if (commentQuery.rows[0].user_id !== userId) {
+    if (Number(commentQuery.rows[0].user_id) !== Number(userId)) {
       return res.status(403).json({ error: { message: "Unauthorized" } });
     }
 

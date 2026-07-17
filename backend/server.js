@@ -7,6 +7,7 @@ const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
 require("./config/db");
+const initDb = require("./config/initDb");
 
 const authRoutes = require("./routes/auth.routes");
 const { globalLimiter } = require("./middleware/rateLimiter");
@@ -65,6 +66,9 @@ app.use("/uploads", express.static(uploadDir));
 app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "ok" });
 });
+
+// DB tables init (idempotent — safe to run on every cold start)
+initDb();
 
 // Root route handler
 app.get("/", (req, res) => {
