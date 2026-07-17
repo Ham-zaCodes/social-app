@@ -157,12 +157,11 @@ exports.getNotifications = async (req, res, next) => {
   try {
     const userId = req.user.id;
 
-    // Fixed: 'receiver_id' changed to 'recipient_id' to align with notifications table schema
     const result = await pool.query(
       `SELECT n.*, u.username as sender_username, u.avatar_url as sender_avatar
        FROM notifications n
        JOIN users u ON n.sender_id = u.id
-       WHERE n.recipient_id = $1
+       WHERE n.receiver_id = $1
        ORDER BY n.created_at DESC`,
       [userId],
     );
@@ -178,11 +177,8 @@ exports.markNotificationsAsRead = async (req, res, next) => {
   try {
     const userId = req.user.id;
 
-    // Fixed: 'receiver_id' changed to 'recipient_id' to align with notifications table schema
     await pool.query(
-      `UPDATE notifications 
-       SET is_read = TRUE 
-       WHERE recipient_id = $1`,
+      `UPDATE notifications SET is_read = TRUE WHERE receiver_id = $1`,
       [userId],
     );
 
