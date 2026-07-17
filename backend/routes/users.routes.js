@@ -1,22 +1,8 @@
 const express = require("express");
 const router = express.Router();
-const multer = require("multer");
-const path = require("path");
 const usersController = require("../controllers/users.controller");
 const protect = require("../middleware/auth");
-
-// --- Configure Multer Storage for Avatars ---
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/");
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, "avatar-" + uniqueSuffix + path.extname(file.originalname));
-  },
-});
-
-const upload = multer({ storage });
+const upload = require("../middleware/upload"); // Use our Cloudinary Upload Middleware instead of local disk storage
 
 // Search endpoints
 router.get("/search", usersController.searchUsers);
@@ -27,6 +13,7 @@ router.get("/suggestions", protect, usersController.getSuggestions);
 // --- NOTIFICATIONS ROUTES ---
 // Fetch notifications for the authenticated user
 router.get("/notifications", protect, usersController.getNotifications);
+
 // Mark all notifications as read
 router.post(
   "/notifications/read",
@@ -41,6 +28,7 @@ router.get("/profile/:username", usersController.getUserProfile);
 router.get("/:id/profile", protect, usersController.getUserProfileById);
 
 // Update profile containing an optional avatar image file and text-based bio
+// Updated to use Cloudinary middleware: upload.single("avatar")
 router.put(
   "/profile",
   protect,

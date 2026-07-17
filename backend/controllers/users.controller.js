@@ -1,4 +1,3 @@
-// controllers/users.controller.js
 const pool = require("../config/db");
 
 // 1. Get User Profile (Public) - Fetch by Username
@@ -55,7 +54,7 @@ exports.getUserProfile = async (req, res, next) => {
   }
 };
 
-// 2. Get User Profile By ID (Protected) - Essential for Frontend profile dashboard tabs
+// 2. Get User Profile By ID (Protected) - Essential for Frontend profile dashboard views
 exports.getUserProfileById = async (req, res, next) => {
   try {
     const userId = req.params.id;
@@ -107,16 +106,16 @@ exports.getUserProfileById = async (req, res, next) => {
   }
 };
 
-// 3. Update User Profile (Protected - Supporting text bio & Multer avatar image uploading)
+// 3. Update User Profile (Protected - Supporting text bio & Cloudinary avatar image uploading)
 exports.updateProfile = async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { bio } = req.body;
 
-    // Capture upload path if multer processed an avatar image file
+    // Capture dynamic secure CDN URL from Cloudinary storage integration instead of local uploads/
     let finalAvatarUrl = null;
-    if (req.file) {
-      finalAvatarUrl = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
+    if (req.file && req.file.path) {
+      finalAvatarUrl = req.file.path; // Holds https://res.cloudinary.com/... path
     }
 
     // Direct mapping updates. If bio is undefined or file is not sent, retain DB values
@@ -194,11 +193,12 @@ exports.getNotifications = async (req, res, next) => {
   try {
     const userId = req.user.id;
 
+    // Fixed: 'receiver_id' changed to 'recipient_id' to align with notifications table schema
     const result = await pool.query(
       `SELECT n.*, u.username as sender_username, u.avatar_url as sender_avatar
        FROM notifications n
        JOIN users u ON n.sender_id = u.id
-       WHERE n.receiver_id = $1
+       WHERE n.recipient_id = $1
        ORDER BY n.created_at DESC`,
       [userId],
     );
@@ -214,10 +214,11 @@ exports.markNotificationsAsRead = async (req, res, next) => {
   try {
     const userId = req.user.id;
 
+    // Fixed: 'receiver_id' changed to 'recipient_id' to align with notifications table schema
     await pool.query(
       `UPDATE notifications 
        SET is_read = TRUE 
-       WHERE receiver_id = $1`,
+       WHERE recipient_id = $1`,
       [userId],
     );
 

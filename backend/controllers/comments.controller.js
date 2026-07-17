@@ -1,6 +1,6 @@
-// controllers/comments.controller.js
 const pool = require("../config/db");
 const sanitizeHtml = require("sanitize-html");
+const { createNotification } = require("../models/notification.model"); // Import notification trigger
 
 // 1. Add a Comment to a Post (Protected)
 exports.addComment = async (req, res, next) => {
@@ -21,20 +21,26 @@ exports.addComment = async (req, res, next) => {
       allowedAttributes: {}, // Strip all attributes
     });
 
-    // Verify post exists first
-    const postCheck = await pool.query("SELECT id FROM posts WHERE id = $1", [
-      postId,
-    ]);
+    // Verify post exists first & get the post author's ID
+    const postCheck = await pool.query(
+      "SELECT id, user_id FROM posts WHERE id = $1",
+      [postId],
+    );
     if (postCheck.rows.length === 0) {
       return res.status(404).json({ error: { message: "Post not found" } });
     }
+
+    const postOwnerId = postCheck.rows[0].user_id;
 
     const result = await pool.query(
       `INSERT INTO comments (user_id, post_id, content)
        VALUES ($1, $2, $3)
        RETURNING id, user_id, post_id, content, created_at`,
-      [userId, postId, cleanContent], // <-- Updated to use cleanContent
+      [userId, postId, cleanContent],
     );
+
+    // Trigger Notification: Post owner ko comment alert bhejein
+    await createNotification(postOwnerId, userId, "COMMENT", postId);
 
     res.status(201).json({ comment: result.rows[0] });
   } catch (err) {

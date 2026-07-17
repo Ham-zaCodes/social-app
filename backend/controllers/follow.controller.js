@@ -1,4 +1,5 @@
 const pool = require("../config/db");
+const { createNotification } = require("../models/notification.model"); // Import notification trigger
 
 // 1. Toggle Follow/Unfollow (Protected)
 exports.toggleFollow = async (req, res, next) => {
@@ -41,6 +42,10 @@ exports.toggleFollow = async (req, res, next) => {
         "INSERT INTO follows (follower_id, following_id) VALUES ($1, $2)",
         [followerId, followingId],
       );
+
+      // Trigger Notification: Target user ko pata chale k kisne follow kiya
+      await createNotification(followingId, followerId, "FOLLOW");
+
       return res
         .status(200)
         .json({ followed: true, message: "Followed user successfully" });
