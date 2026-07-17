@@ -1,8 +1,7 @@
-// controllers/post.controller.js
 const pool = require("../config/db");
 const sanitizeHtml = require("sanitize-html");
 
-// 1. Create a Post (Protected with Multer file capture integration)
+// 1. Create a Post (Protected with Cloudinary image upload)
 exports.createPost = async (req, res, next) => {
   try {
     const { content, media_url } = req.body;
@@ -21,10 +20,10 @@ exports.createPost = async (req, res, next) => {
       allowedAttributes: {}, // Strip all attributes
     });
 
-    // Capture the path of the uploaded file provided by multer if available
+    // Capture Cloudinary CDN URL from req.file.path instead of building a local relative path
     let finalImageUrl = null;
-    if (req.file) {
-      finalImageUrl = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
+    if (req.file && req.file.path) {
+      finalImageUrl = req.file.path; // Cloudinary directly provides the https URL here
     } else if (media_url && media_url.trim() !== "") {
       finalImageUrl = media_url; // Fallback to provided text URL if any
     }
@@ -43,7 +42,7 @@ exports.createPost = async (req, res, next) => {
   }
 };
 
-// 2. Get Feed / All Posts (Includes author details & counts, updated to use image_url)
+// 2. Get Feed / All Posts (Includes author details & counts)
 exports.getFeed = async (req, res, next) => {
   try {
     const result = await pool.query(
@@ -96,7 +95,7 @@ exports.deletePost = async (req, res, next) => {
       return res.status(404).json({ error: { message: "Post not found" } });
     }
 
-    // Now we can strictly compare integers safely!
+    // Compare integers safely
     if (postQuery.rows[0].user_id !== userId) {
       return res
         .status(403)
@@ -112,7 +111,7 @@ exports.deletePost = async (req, res, next) => {
   }
 };
 
-// 4. Get Personalized Feed (Protected - Only shows followed users' posts + your own, updated to use image_url)
+// 4. Get Personalized Feed (Protected)
 exports.getHomeFeed = async (req, res, next) => {
   try {
     const userId = req.user.id; // Logged-in user ID from auth gateway
