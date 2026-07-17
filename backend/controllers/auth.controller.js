@@ -50,7 +50,16 @@ exports.register = async (req, res, next) => {
     );
 
     const user = result.rows[0];
-    res.status(201).json({ user });
+
+    // Register ke baad seedha token bhi do — frontend ko alag login call nahi karni padegi
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
+    res.cookie("refreshToken", refreshToken, COOKIE_OPTIONS);
+
+    res.status(201).json({
+      accessToken,
+      user: { id: user.id, username: user.username, email: user.email },
+    });
   } catch (err) {
     next(err);
   }
