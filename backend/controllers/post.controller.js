@@ -70,7 +70,38 @@ exports.getFeed = async (req, res, next) => {
   }
 };
 
-// 3. Delete Post
+// 3. Edit Post (Protected)
+exports.editPost = async (req, res, next) => {
+  try {
+    const postId = req.params.id;
+    const userId = Number(req.user.id);
+    const { content } = req.body;
+
+    if (!content || content.trim() === "") {
+      return res.status(400).json({ error: { message: "Content cannot be empty" } });
+    }
+
+    const postQuery = await pool.query("SELECT user_id FROM posts WHERE id = $1", [postId]);
+    if (postQuery.rows.length === 0) {
+      return res.status(404).json({ error: { message: "Post not found" } });
+    }
+    if (postQuery.rows[0].user_id !== userId) {
+      return res.status(403).json({ error: { message: "Unauthorized" } });
+    }
+
+    const cleanContent = sanitizeHtml(content, { allowedTags: [], allowedAttributes: {} });
+    const result = await pool.query(
+      `UPDATE posts SET content = $1 WHERE id = $2 RETURNING id, content, image_url, created_at`,
+      [cleanContent, postId]
+    );
+
+    res.status(200).json({ post: result.rows[0] });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// 4. Delete Post
 exports.deletePost = async (req, res, next) => {
   try {
     const postId = req.params.id;

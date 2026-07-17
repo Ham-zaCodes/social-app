@@ -13,6 +13,9 @@ router.get("/", postController.getFeed);
 // Create Post - Handles Cloudinary upload via multer-storage-cloudinary
 router.post("/", protect, upload.single("image"), postController.createPost);
 
+// Edit post
+router.put("/:id", protect, postController.editPost);
+
 // Delete post
 router.delete("/:id", protect, postController.deletePost);
 

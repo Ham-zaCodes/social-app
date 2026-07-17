@@ -5,10 +5,10 @@ const pool = require("../config/db");
 
 // Centralized cookie configuration to keep setting and clearing perfectly symmetrical
 const COOKIE_OPTIONS = {
-  httpOnly: true, // Hides cookie from malicious client-side scripts (No XSS theft)
-  secure: process.env.NODE_ENV === "production", // Forces HTTPS in production
-  sameSite: process.env.NODE_ENV === "production" ? "Lax" : "Lax", // "Lax" balances high security with cross-domain utility
-  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  httpOnly: true,
+  secure: true,
+  sameSite: "None", // Cross-domain cookie ke liye zaroori (frontend aur backend alag domains)
+  maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 
 // Decoded JWT payload shape matches on both login and silent refresh
@@ -16,7 +16,7 @@ const generateAccessToken = (user) => {
   return jwt.sign(
     { id: user.id, username: user.username, email: user.email },
     process.env.JWT_SECRET,
-    { expiresIn: "15m" },
+    { expiresIn: "7d" },
   );
 };
 
