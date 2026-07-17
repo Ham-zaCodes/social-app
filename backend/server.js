@@ -29,10 +29,7 @@ app.use(
   }),
 );
 
-// 1. Explicitly handle OPTIONS preflight requests globally before standard routing to prevent Vercel CORS drops
-app.options("/*", cors());
-
-// 2. Comprehensive CORS configuration for local development and live deployments
+// Comprehensive CORS configuration to handle routing, credentials, and preflight OPTIONS automatically
 app.use(
   cors({
     origin: [
