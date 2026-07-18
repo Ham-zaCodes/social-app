@@ -12,11 +12,12 @@ exports.getRooms = async (req, res, next) => {
               (SELECT u.username FROM chat_room_members crm JOIN users u ON u.id = crm.user_id WHERE crm.room_id = cr.id AND crm.user_id != $1 LIMIT 1) as recipient_username,
               (SELECT u.avatar_url FROM chat_room_members crm JOIN users u ON u.id = crm.user_id WHERE crm.room_id = cr.id AND crm.user_id != $1 LIMIT 1) as recipient_avatar,
               (SELECT message_text FROM messages WHERE room_id = cr.id ORDER BY created_at DESC LIMIT 1) as last_message,
-              (SELECT created_at FROM messages WHERE room_id = cr.id ORDER BY created_at DESC LIMIT 1) as last_message_time
+              (SELECT created_at FROM messages WHERE room_id = cr.id ORDER BY created_at DESC LIMIT 1) as last_message_time,
+              (SELECT COUNT(*)::int FROM messages WHERE room_id = cr.id AND sender_id != $1 AND is_read = FALSE) as unread_count
        FROM chat_rooms cr
        JOIN chat_room_members crm ON crm.room_id = cr.id
        WHERE crm.user_id = $1
-       ORDER BY last_message_time DESC NULLS LAST`, // Rooms ko last active message ke order se arrange kiya
+       ORDER BY last_message_time DESC NULLS LAST`,
       [userId],
     );
     res.status(200).json(result.rows);
@@ -25,16 +26,22 @@ exports.getRooms = async (req, res, next) => {
   }
 };
 
-// 2. Load thread history for a dynamic room
+// 2. Load thread history — aur sab messages read mark karo
 exports.getRoomMessages = async (req, res, next) => {
   try {
     const { roomId } = req.params;
+    const userId = req.user.id;
 
     if (!roomId) {
-      return res
-        .status(400)
-        .json({ error: { message: "Room ID is required" } });
+      return res.status(400).json({ error: { message: "Room ID is required" } });
     }
+
+    // Sab unread messages read mark karo (jo current user ko bheje gaye hain)
+    await pool.query(
+      `UPDATE messages SET is_read = TRUE 
+       WHERE room_id = $1 AND sender_id != $2 AND is_read = FALSE`,
+      [roomId, userId],
+    );
 
     const messages = await pool.query(
       `SELECT m.*, u.username as sender_username, u.avatar_url as sender_avatar 
@@ -50,7 +57,7 @@ exports.getRoomMessages = async (req, res, next) => {
   }
 };
 
-// 3. Start a chat or send a dynamic message (Transactional and Crash-Proof)
+// 3. Send message
 exports.sendMessage = async (req, res, next) => {
   const { recipientId, messageText } = req.body;
   const senderId = req.user.id;
@@ -96,15 +103,15 @@ exports.sendMessage = async (req, res, next) => {
     }
 
     const messageResult = await client.query(
-      `INSERT INTO messages (room_id, sender_id, message_text) 
-       VALUES ($1, $2, $3) 
+      `INSERT INTO messages (room_id, sender_id, message_text, is_read) 
+       VALUES ($1, $2, $3, FALSE) 
        RETURNING *`,
       [roomId, senderId, messageText],
     );
 
     await client.query("COMMIT");
 
-    // Message notification bhejo
+    // Message notification
     const { createNotification } = require("../models/notification.model");
     await createNotification(parseInt(recipientId), senderId, "MESSAGE", null, messageText);
 
