@@ -1,4 +1,4 @@
-const pool = require("./db");
+const pool = require("../config/db");
 
 exports.createNotification = async (recipientId, senderId, type, postId = null, messageText = null) => {
   try {
