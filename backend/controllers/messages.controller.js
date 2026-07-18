@@ -54,27 +54,23 @@ exports.sendMessage = async (req, res, next) => {
   const { recipientId, messageText } = req.body;
   const senderId = req.user.id;
 
-  // Strict body verification
   if (!recipientId || !messageText || messageText.trim() === "") {
     return res.status(400).json({
       error: { message: "Recipient ID and message content are required" },
     });
   }
 
-  // Self-chat check
   if (parseInt(senderId) === parseInt(recipientId)) {
     return res.status(400).json({
       error: { message: "You cannot message yourself" },
     });
   }
 
-  // Begin Transaction Client
   const client = await pool.connect();
 
   try {
     await client.query("BEGIN");
 
-    // Check if an exclusive 2-member DM room exists between A and B
     let roomCheck = await client.query(
       `SELECT room_id FROM chat_room_members 
        WHERE room_id IN (
@@ -88,20 +84,16 @@ exports.sendMessage = async (req, res, next) => {
     if (roomCheck.rows.length > 0) {
       roomId = roomCheck.rows[0].room_id;
     } else {
-      // Create new DM room safely using generic Postgres auto-id syntax
       const newRoom = await client.query(
         "INSERT INTO chat_rooms DEFAULT VALUES RETURNING id",
       );
       roomId = newRoom.rows[0].id;
-
-      // Associate both users with the new room
       await client.query(
         "INSERT INTO chat_room_members (room_id, user_id) VALUES ($1, $2), ($1, $3)",
         [roomId, senderId, recipientId],
       );
     }
 
-    // Insert message log
     const messageResult = await client.query(
       `INSERT INTO messages (room_id, sender_id, message_text) 
        VALUES ($1, $2, $3) 
@@ -109,12 +101,17 @@ exports.sendMessage = async (req, res, next) => {
       [roomId, senderId, messageText],
     );
 
-    await client.query("COMMIT"); // Sab operational updates success!
-    res.status(201).json(messageResult.rows[0]);
+    await client.query("COMMIT");
+
+    // Message notification bhejo
+    const { createNotification } = require("../models/notification.model");
+    await createNotification(parseInt(recipientId), senderId, "MESSAGE", null, messageText);
+
+    res.status(201).json({ ...messageResult.rows[0], room_id: roomId });
   } catch (err) {
-    await client.query("ROLLBACK"); // Kuch bhi fail hua to automatic undo
+    await client.query("ROLLBACK");
     next(err);
   } finally {
-    client.release(); // Connection pool ko thread wapis return karna lazmi hai
+    client.release();
   }
 };

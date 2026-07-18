@@ -162,12 +162,13 @@ exports.getNotifications = async (req, res, next) => {
         n.*,
         u.username as sender_username,
         u.avatar_url as sender_avatar,
-        c.content as comment_text
+        CASE WHEN n.type = 'COMMENT' THEN
+          (SELECT c.content FROM comments c 
+           WHERE c.post_id = n.entity_id AND c.user_id = n.sender_id 
+           ORDER BY c.created_at DESC LIMIT 1)
+        ELSE NULL END as comment_text
        FROM notifications n
        JOIN users u ON n.sender_id = u.id
-       LEFT JOIN comments c ON n.type = 'COMMENT'
-         AND c.post_id = n.entity_id
-         AND c.user_id = n.sender_id
        WHERE n.receiver_id = $1
        ORDER BY n.created_at DESC`,
       [userId],

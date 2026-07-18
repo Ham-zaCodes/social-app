@@ -17,7 +17,7 @@ const followRoutes = require("./routes/follow.routes");
 const commentsRoutes = require("./routes/comments.routes");
 const likesRoutes = require("./routes/likes.routes");
 const usersRoutes = require("./routes/users.routes");
-//const messageRoutes = require("./routes/messages.routes"); // Disabled temporarily to prevent missing file crashes
+const messageRoutes = require("./routes/messages.js");
 
 const app = express();
 
@@ -82,7 +82,7 @@ app.use("/api/post", commentsRoutes);
 app.use("/api/post", likesRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/users", followRoutes);
-//app.use("/api/messages", messageRoutes); // Disabled temporarily to prevent missing file crashes
+app.use("/api/messages", messageRoutes);
 
 app.use(errorHandler);
 
