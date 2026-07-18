@@ -8,6 +8,7 @@ exports.getRooms = async (req, res, next) => {
 
     const result = await pool.query(
       `SELECT cr.id as room_id, 
+              (SELECT u.id FROM chat_room_members crm JOIN users u ON u.id = crm.user_id WHERE crm.room_id = cr.id AND crm.user_id != $1 LIMIT 1) as recipient_id,
               (SELECT u.username FROM chat_room_members crm JOIN users u ON u.id = crm.user_id WHERE crm.room_id = cr.id AND crm.user_id != $1 LIMIT 1) as recipient_username,
               (SELECT u.avatar_url FROM chat_room_members crm JOIN users u ON u.id = crm.user_id WHERE crm.room_id = cr.id AND crm.user_id != $1 LIMIT 1) as recipient_avatar,
               (SELECT message_text FROM messages WHERE room_id = cr.id ORDER BY created_at DESC LIMIT 1) as last_message,
