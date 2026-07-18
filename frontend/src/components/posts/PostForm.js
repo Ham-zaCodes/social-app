@@ -11,17 +11,29 @@ const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
 // Cloudinary par directly image upload karo (unsigned)
 const uploadToCloudinary = async (file) => {
+  if (!CLOUD_NAME || !UPLOAD_PRESET) {
+    throw new Error("Image upload is not configured on this site.");
+  }
+
   const formData = new FormData();
   formData.append("file", file);
   formData.append("upload_preset", UPLOAD_PRESET);
+  formData.append("folder", "social-app");
 
   const res = await fetch(
     `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
     { method: "POST", body: formData }
   );
 
-  if (!res.ok) throw new Error("Image upload failed");
-  const data = await res.json();
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data?.error?.message || "Image upload failed");
+  }
+
+  if (!data.secure_url) {
+    throw new Error("Cloudinary did not return an image URL.");
+  }
+
   return data.secure_url;
 };
 
