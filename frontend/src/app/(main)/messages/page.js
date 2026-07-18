@@ -64,17 +64,30 @@ export default function MessagesPage() {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
-  const [lastRefreshAt, setLastRefreshAt] = useState(0);
+  const [rateLimited, setRateLimited] = useState(false);
   const bottomRef = useRef();
   const roomIdRef = useRef(null);
+  const refreshInFlightRef = useRef(false);
 
   useEffect(() => { roomIdRef.current = roomId; }, [roomId]);
 
   // Initial fetch
   useEffect(() => {
     if (!user) return;
-    messageService.getMutualFollows(user.id).then(setMutuals).catch(() => {});
-    messageService.getRooms().then(setRooms).catch(() => {});
+
+    const loadInitialData = async () => {
+      try {
+        const mutualsData = await messageService.getMutualFollows(user.id);
+        setMutuals(mutualsData || []);
+      } catch (_) {}
+
+      try {
+        const roomsData = await messageService.getRooms();
+        setRooms(roomsData || []);
+      } catch (_) {}
+    };
+
+    loadInitialData();
   }, [user?.id]);
 
   useEffect(() => {
@@ -93,45 +106,56 @@ export default function MessagesPage() {
     }
   }, [searchParams, user?.id, mutuals, rooms]);
 
-  // Polling — sirf active chat ke liye aur bohat slow interval pe
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      const currentRoomId = roomIdRef.current;
-      const now = Date.now();
+  const refreshRoomData = async (roomIdToLoad = roomIdRef.current) => {
+    if (refreshInFlightRef.current) return;
+    refreshInFlightRef.current = true;
 
-      if (now - lastRefreshAt < 15000) return;
-      setLastRefreshAt(now);
-
-      if (!currentRoomId) {
-        messageService.getRooms().then(setRooms).catch(() => {});
+    try {
+      if (!roomIdToLoad) {
+        const roomsData = await messageService.getRooms();
+        setRooms(roomsData || []);
         return;
       }
 
-      try {
-        const [roomsData, msgs] = await Promise.all([
-          messageService.getRooms(),
-          messageService.getRoomMessages(currentRoomId),
-        ]);
-        setRooms(roomsData);
-        setMessages((prev) => {
-          if (msgs.length > prev.length) {
-            const newIds = msgs.slice(prev.length).map((m) => m.id);
-            setNewMsgIds((prevIds) => new Set([...prevIds, ...newIds]));
-            setTimeout(() => {
-              setNewMsgIds((prevIds) => {
-                const updated = new Set(prevIds);
-                newIds.forEach((id) => updated.delete(id));
-                return updated;
-              });
-            }, 3000);
-          }
-          return msgs;
-        });
-      } catch (_) {}
-    }, 15000);
+      const [roomsData, msgs] = await Promise.all([
+        messageService.getRooms(),
+        messageService.getRoomMessages(roomIdToLoad),
+      ]);
 
-    return () => clearInterval(interval);
-  }, [lastRefreshAt]);
+      setRooms(roomsData || []);
+      setMessages((prev) => {
+        if ((msgs || []).length > prev.length) {
+          const newIds = msgs.slice(prev.length).map((m) => m.id);
+          setNewMsgIds((prevIds) => new Set([...prevIds, ...newIds]));
+          setTimeout(() => {
+            setNewMsgIds((prevIds) => {
+              const updated = new Set(prevIds);
+              newIds.forEach((id) => updated.delete(id));
+              return updated;
+            });
+          }, 3000);
+        }
+        return msgs || [];
+      });
+      setRateLimited(false);
+    } catch (error) {
+      if (error?.response?.status === 429) {
+        setRateLimited(true);
+      }
+    } finally {
+      refreshInFlightRef.current = false;
+    }
+  };
+
+  useEffect(() => {
+    if (!user) return;
+    refreshRoomData();
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!roomId) return;
+    refreshRoomData(roomId);
+  }, [roomId]);
 
   // Scroll to bottom
   useEffect(() => {
@@ -148,9 +172,8 @@ export default function MessagesPage() {
       setRoomId(existingRoom.room_id);
       try {
         const msgs = await messageService.getRoomMessages(existingRoom.room_id);
-        setMessages(msgs);
-        // Rooms refresh karo — unread count 0 ho jaye
-        messageService.getRooms().then(setRooms).catch(() => {});
+        setMessages(msgs || []);
+        await messageService.getRooms();
       } catch (_) {}
     } else {
       setRoomId(null);
@@ -167,9 +190,8 @@ export default function MessagesPage() {
     setRoomId(room.room_id);
     try {
       const msgs = await messageService.getRoomMessages(room.room_id);
-      setMessages(msgs);
-      // Rooms refresh — unread count 0 ho jaye sidebar mein
-      messageService.getRooms().then(setRooms).catch(() => {});
+      setMessages(msgs || []);
+      await messageService.getRooms();
     } catch (_) {}
     setLoadingMessages(false);
   };
@@ -185,7 +207,7 @@ export default function MessagesPage() {
       if (!roomId) {
         setRoomId(msg.room_id);
         const updatedRooms = await messageService.getRooms();
-        setRooms(updatedRooms);
+        setRooms(updatedRooms || []);
       }
     } catch (_) {}
     finally { setSending(false); }
@@ -290,6 +312,12 @@ export default function MessagesPage() {
               <Avatar username={selectedUser.username} avatarUrl={selectedUser.avatar_url} size="md" />
               <p className="text-sm font-bold text-white">@{selectedUser.username}</p>
             </div>
+
+            {rateLimited && (
+              <div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+                Messaging is temporarily paused because the server rate limit was reached. Please try again in a few minutes.
+              </div>
+            )}
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto space-y-2 pr-1 max-h-[calc(100vh-280px)]">
