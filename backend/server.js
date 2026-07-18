@@ -33,12 +33,14 @@ app.use(
 // Comprehensive CORS configuration to handle routing, credentials, and preflight OPTIONS automatically
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      "http://localhost:3001", // Fallback for busy local ports
-      "http://localhost:5500",
-      "https://social-app-nine-zeta.vercel.app", // Your frontend domain
-    ],
+    origin: (origin, callback) => {
+      // Allow localhost + any vercel.app domain
+      if (!origin || origin.includes("localhost") || origin.includes("vercel.app")) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
