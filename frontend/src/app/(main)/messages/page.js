@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import messageService from "@/services/messageService";
 
@@ -52,6 +53,8 @@ function Ticks({ isRead }) {
 
 export default function MessagesPage() {
   const { user } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [mutuals, setMutuals] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -72,6 +75,22 @@ export default function MessagesPage() {
     messageService.getMutualFollows(user.id).then(setMutuals).catch(() => {});
     messageService.getRooms().then(setRooms).catch(() => {});
   }, [user?.id]);
+
+  useEffect(() => {
+    const targetUsername = searchParams.get("user");
+    if (!targetUsername || !user || !mutuals.length && !rooms.length) return;
+
+    const matchingMutual = mutuals.find((m) => m.username === targetUsername);
+    if (matchingMutual) {
+      openChat(matchingMutual);
+      return;
+    }
+
+    const matchingRoom = rooms.find((r) => r.recipient_username === targetUsername);
+    if (matchingRoom) {
+      openRoomChat(matchingRoom);
+    }
+  }, [searchParams, user?.id, mutuals, rooms]);
 
   // Polling — har 4 seconds mein naye messages + read status check karo
   useEffect(() => {

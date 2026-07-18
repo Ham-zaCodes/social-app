@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import apiClient from "@/services/api";
 
 const typeConfig = {
@@ -20,6 +20,7 @@ function timeAgo(dateStr) {
 }
 
 export default function NotificationsPage() {
+  const router = useRouter();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -34,6 +35,17 @@ export default function NotificationsPage() {
   }, []);
 
   const unread = notifications.filter((n) => !n.is_read).length;
+
+  const handleNotificationClick = (notification) => {
+    if (!notification?.sender_username) return;
+
+    if (notification.type === "MESSAGE") {
+      router.push(`/messages?user=${encodeURIComponent(notification.sender_username)}`);
+      return;
+    }
+
+    router.push(`/users/${encodeURIComponent(notification.sender_username)}`);
+  };
 
   return (
     <main className="flex-1 max-w-2xl min-h-screen pt-8 pb-16">
@@ -59,16 +71,17 @@ export default function NotificationsPage() {
           {notifications.map((n) => {
             const cfg = typeConfig[n.type] || { icon: "🔔", color: "text-gray-400", text: "interacted with you" };
             return (
-              <div
+              <button
                 key={n.id}
-                className={`flex items-center gap-4 p-4 rounded-2xl border transition-all ${
+                type="button"
+                onClick={() => handleNotificationClick(n)}
+                className={`flex w-full items-center gap-4 p-4 rounded-2xl border text-left transition-all cursor-pointer ${
                   !n.is_read
                     ? "bg-indigo-500/[0.06] border-indigo-500/20"
                     : "bg-white/[0.01] border-white/[0.04]"
                 }`}
               >
-                {/* Sender avatar — clickable */}
-                <Link href={`/users/${n.sender_username}`} className="flex-shrink-0">
+                <div className="flex-shrink-0">
                   {n.sender_avatar ? (
                     <img src={n.sender_avatar} alt={n.sender_username}
                       className="w-10 h-10 rounded-full object-cover" />
@@ -77,14 +90,13 @@ export default function NotificationsPage() {
                       {n.sender_username?.[0] || "U"}
                     </div>
                   )}
-                </Link>
+                </div>
 
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-gray-200">
-                    <Link href={`/users/${n.sender_username}`}
-                      className="font-semibold text-white hover:text-indigo-300 transition-colors">
+                    <span className="font-semibold text-white hover:text-indigo-300 transition-colors">
                       {n.sender_username}
-                    </Link>
+                    </span>
                     {" "}
                     <span className={cfg.color}>{cfg.text}</span>
                   </p>
@@ -106,7 +118,7 @@ export default function NotificationsPage() {
                 {!n.is_read && (
                   <div className="w-2 h-2 rounded-full bg-indigo-500 flex-shrink-0" />
                 )}
-              </div>
+              </button>
             );
           })}
         </div>
