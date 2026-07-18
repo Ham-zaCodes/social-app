@@ -64,6 +64,7 @@ export default function MessagesPage() {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [lastRefreshAt, setLastRefreshAt] = useState(0);
   const bottomRef = useRef();
   const roomIdRef = useRef(null);
 
@@ -92,19 +93,27 @@ export default function MessagesPage() {
     }
   }, [searchParams, user?.id, mutuals, rooms]);
 
-  // Polling — har 4 seconds mein naye messages + read status check karo
+  // Polling — sirf active chat ke liye aur bohat slow interval pe
   useEffect(() => {
     const interval = setInterval(async () => {
       const currentRoomId = roomIdRef.current;
+      const now = Date.now();
 
-      // Rooms sidebar refresh (unread count + last message)
-      messageService.getRooms().then(setRooms).catch(() => {});
+      if (now - lastRefreshAt < 15000) return;
+      setLastRefreshAt(now);
 
-      if (!currentRoomId) return;
+      if (!currentRoomId) {
+        messageService.getRooms().then(setRooms).catch(() => {});
+        return;
+      }
+
       try {
-        const msgs = await messageService.getRoomMessages(currentRoomId);
+        const [roomsData, msgs] = await Promise.all([
+          messageService.getRooms(),
+          messageService.getRoomMessages(currentRoomId),
+        ]);
+        setRooms(roomsData);
         setMessages((prev) => {
-          // Naye messages highlight karo
           if (msgs.length > prev.length) {
             const newIds = msgs.slice(prev.length).map((m) => m.id);
             setNewMsgIds((prevIds) => new Set([...prevIds, ...newIds]));
@@ -119,9 +128,10 @@ export default function MessagesPage() {
           return msgs;
         });
       } catch (_) {}
-    }, 4000);
+    }, 15000);
+
     return () => clearInterval(interval);
-  }, []);
+  }, [lastRefreshAt]);
 
   // Scroll to bottom
   useEffect(() => {
