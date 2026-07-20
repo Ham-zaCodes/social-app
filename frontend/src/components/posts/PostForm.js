@@ -22,7 +22,7 @@ const uploadToCloudinary = async (file) => {
 
   const res = await fetch(
     `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
-    { method: "POST", body: formData }
+    { method: "POST", body: formData },
   );
 
   const data = await res.json().catch(() => ({}));
@@ -110,8 +110,8 @@ export default function PostForm({ user, onPostCreated }) {
       setUploadingImage(false);
       alert(
         error?.response?.data?.error?.message ||
-        error?.message ||
-        "Failed to publish post."
+          error?.message ||
+          "Failed to publish post.",
       );
     } finally {
       setPosting(false);
@@ -119,14 +119,18 @@ export default function PostForm({ user, onPostCreated }) {
   };
 
   const isLoading = posting || uploadingImage;
-  const buttonText = uploadingImage ? "Uploading image..." : posting ? "Posting..." : "Post";
+  const buttonText = uploadingImage
+    ? "Uploading image..."
+    : posting
+      ? "Posting..."
+      : "Post";
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-white/[0.02] border border-white/[0.06] p-4 rounded-2xl mb-6 shadow-xl"
+      className="bg-white/[0.02] border border-white/[0.06] p-3 sm:p-4 rounded-2xl mb-6 shadow-xl"
     >
-      <div className="flex gap-4">
+      <div className="flex gap-3 sm:gap-4">
         <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 flex items-center justify-center font-bold text-white uppercase flex-shrink-0">
           {user?.username?.[0] || "U"}
         </div>
@@ -141,7 +145,11 @@ export default function PostForm({ user, onPostCreated }) {
 
           {preview && (
             <div className="relative mt-2 rounded-xl overflow-hidden border border-white/[0.06]">
-              <img src={preview} alt="preview" className="w-full max-h-60 object-cover" />
+              <img
+                src={preview}
+                alt="preview"
+                className="w-full max-h-60 object-cover"
+              />
               <button
                 type="button"
                 onClick={removeImage}

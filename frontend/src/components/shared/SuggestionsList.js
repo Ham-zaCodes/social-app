@@ -26,7 +26,7 @@ export default function SuggestionsList() {
   };
 
   return (
-    <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-4 shadow-xl">
+    <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-3 sm:p-4 shadow-xl">
       <h3 className="text-sm font-bold text-white mb-4 tracking-tight">
         Who to follow
       </h3>
@@ -41,7 +41,9 @@ export default function SuggestionsList() {
                   {u.username[0]}
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-white">{u.username}</p>
+                  <p className="text-xs font-semibold text-white">
+                    {u.username}
+                  </p>
                   <p className="text-[10px] text-gray-500">@{u.username}</p>
                 </div>
               </div>

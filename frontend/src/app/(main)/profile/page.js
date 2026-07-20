@@ -13,9 +13,13 @@ const uploadToCloudinary = async (file) => {
   const fd = new FormData();
   fd.append("file", file);
   fd.append("upload_preset", UPLOAD_PRESET);
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
-    method: "POST", body: fd,
-  });
+  const res = await fetch(
+    `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+    {
+      method: "POST",
+      body: fd,
+    },
+  );
   if (!res.ok) throw new Error("Avatar upload failed");
   return (await res.json()).secure_url;
 };
@@ -28,28 +32,48 @@ function FollowListModal({ title, users, onClose }) {
       <div className="bg-[#0F1623] border border-white/[0.08] rounded-2xl p-6 w-full max-w-sm shadow-2xl">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-bold text-white">{title}</h3>
-          <button onClick={onClose} className="text-gray-500 hover:text-white text-lg">✕</button>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-white text-lg"
+          >
+            ✕
+          </button>
         </div>
         <div className="space-y-3 max-h-80 overflow-y-auto">
           {users.length === 0 ? (
-            <p className="text-xs text-gray-500 text-center py-4">No users yet.</p>
+            <p className="text-xs text-gray-500 text-center py-4">
+              No users yet.
+            </p>
           ) : (
             users.map((u) => (
               <button
                 key={u.id}
-                onClick={() => { onClose(); router.push(`/users/${u.username}`); }}
+                onClick={() => {
+                  onClose();
+                  router.push(`/users/${u.username}`);
+                }}
                 className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-white/[0.04] transition-all text-left"
               >
                 {u.avatar_url ? (
-                  <img src={u.avatar_url} alt={u.username} className="w-9 h-9 rounded-full object-cover" />
+                  <img
+                    src={u.avatar_url}
+                    alt={u.username}
+                    className="w-9 h-9 rounded-full object-cover"
+                  />
                 ) : (
                   <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center font-bold text-xs text-white uppercase">
                     {u.username?.[0]}
                   </div>
                 )}
                 <div>
-                  <p className="text-sm font-semibold text-white">{u.username}</p>
-                  {u.bio && <p className="text-xs text-gray-500 truncate max-w-[180px]">{u.bio}</p>}
+                  <p className="text-sm font-semibold text-white">
+                    {u.username}
+                  </p>
+                  {u.bio && (
+                    <p className="text-xs text-gray-500 truncate max-w-[180px]">
+                      {u.bio}
+                    </p>
+                  )}
                 </div>
               </button>
             ))
@@ -80,7 +104,8 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!user) return;
-    apiClient.get(`/users/${user.id}/profile`)
+    apiClient
+      .get(`/users/${user.id}/profile`)
       .then((res) => {
         setProfile(res.data.profile);
         setPosts(res.data.posts || []);
@@ -133,27 +158,41 @@ export default function ProfilePage() {
   };
 
   const handlePostEdit = (postId, newContent) =>
-    setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, content: newContent } : p));
+    setPosts((prev) =>
+      prev.map((p) => (p.id === postId ? { ...p, content: newContent } : p)),
+    );
 
   const handlePostDelete = async (postId) => {
     try {
       await apiClient.delete(`/post/${postId}`);
       setPosts((prev) => prev.filter((p) => p.id !== postId));
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   if (loading) {
-    return <main className="flex-1 min-h-screen pt-8 pb-16"><p className="text-sm text-gray-500">Loading profile...</p></main>;
+    return (
+      <main className="flex-1 min-h-screen pt-8 pb-16">
+        <p className="text-sm text-gray-500">Loading profile...</p>
+      </main>
+    );
   }
 
   return (
-    <main className="flex-1 max-w-2xl min-h-screen pt-8 pb-16">
+    <main className="w-full max-w-2xl min-h-screen pt-4 pb-24 sm:pt-6 lg:pt-8 lg:pb-16">
       {/* Profile Header */}
-      <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 mb-6">
-        <div className="flex items-start gap-5">
+      <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-4 sm:p-6 mb-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-5">
           {/* Avatar with upload */}
           <div className="relative flex-shrink-0">
-            <input ref={avatarRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+            <input
+              ref={avatarRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarChange}
+            />
             <button
               onClick={() => avatarRef.current.click()}
               disabled={avatarUploading}
@@ -180,14 +219,16 @@ export default function ProfilePage() {
           </div>
 
           <div className="flex-1">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="text-lg font-bold text-white">{profile?.username}</h2>
+                <h2 className="text-lg font-bold text-white">
+                  {profile?.username}
+                </h2>
                 <p className="text-sm text-gray-500">@{profile?.username}</p>
               </div>
               <button
                 onClick={() => setEditMode((prev) => !prev)}
-                className="text-xs text-gray-400 hover:text-white border border-white/[0.08] px-3 py-1.5 rounded-xl hover:bg-white/[0.04] transition-all"
+                className="w-fit text-xs text-gray-400 hover:text-white border border-white/[0.08] px-3 py-1.5 rounded-xl hover:bg-white/[0.04] transition-all"
               >
                 {editMode ? "Cancel" : "✏️ Edit Profile"}
               </button>
@@ -212,25 +253,36 @@ export default function ProfilePage() {
                 </button>
               </div>
             ) : (
-              profile?.bio && <p className="text-sm text-gray-400 mt-2">{profile.bio}</p>
+              profile?.bio && (
+                <p className="text-sm text-gray-400 mt-2">{profile.bio}</p>
+              )
             )}
 
             {/* Stats — clickable */}
-            <div className="flex gap-5 mt-3 text-xs text-gray-500">
+            <div className="flex flex-wrap gap-4 sm:gap-5 mt-3 text-xs text-gray-500">
               <span>
-                <span className="text-white font-semibold">{profile?.posts_count || 0}</span> Posts
+                <span className="text-white font-semibold">
+                  {profile?.posts_count || 0}
+                </span>{" "}
+                Posts
               </span>
               <button
                 onClick={() => openModal("followers")}
                 className="hover:text-white transition-colors"
               >
-                <span className="text-white font-semibold">{profile?.followers_count || 0}</span> Followers
+                <span className="text-white font-semibold">
+                  {profile?.followers_count || 0}
+                </span>{" "}
+                Followers
               </button>
               <button
                 onClick={() => openModal("following")}
                 className="hover:text-white transition-colors"
               >
-                <span className="text-white font-semibold">{profile?.following_count || 0}</span> Following
+                <span className="text-white font-semibold">
+                  {profile?.following_count || 0}
+                </span>{" "}
+                Following
               </button>
             </div>
           </div>
@@ -250,7 +302,11 @@ export default function ProfilePage() {
           posts.map((post) => (
             <PostCard
               key={post.id}
-              post={{ ...post, author_username: profile?.username, author_id: profile?.id }}
+              post={{
+                ...post,
+                author_username: profile?.username,
+                author_id: profile?.id,
+              }}
               currentUserId={user?.id}
               onEdit={handlePostEdit}
               onDelete={handlePostDelete}

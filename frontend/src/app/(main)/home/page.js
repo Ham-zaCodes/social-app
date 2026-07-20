@@ -33,15 +33,17 @@ export default function HomePage() {
 
   const handleEdit = (postId, newContent) => {
     setPosts((prev) =>
-      prev.map((p) => (p.id === postId ? { ...p, content: newContent } : p))
+      prev.map((p) => (p.id === postId ? { ...p, content: newContent } : p)),
     );
   };
 
   return (
-    <>
-      <main className="flex-1 max-w-xl min-h-screen pt-8 pb-16">
+    <div className="flex flex-col gap-4 lg:flex-row lg:gap-6">
+      <main className="w-full max-w-2xl min-h-screen pt-4 pb-20 sm:pt-6 lg:pt-8 lg:pb-16">
         <div className="border-b border-white/[0.06] pb-3 mb-4">
-          <h1 className="text-lg font-bold text-white tracking-tight">Home Feed</h1>
+          <h1 className="text-lg font-bold text-white tracking-tight">
+            Home Feed
+          </h1>
         </div>
 
         <PostForm user={user} onPostCreated={handlePostCreated} />
@@ -69,9 +71,9 @@ export default function HomePage() {
         </div>
       </main>
 
-      <aside className="hidden lg:block w-80 h-screen sticky top-0 pt-8 pl-4">
+      <aside className="w-full lg:sticky lg:top-0 lg:w-80 lg:pt-8 lg:pl-2">
         <SuggestionsList />
       </aside>
-    </>
+    </div>
   );
 }
