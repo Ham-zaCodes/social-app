@@ -49,7 +49,7 @@ export default function UserProfilePage() {
 
   if (loading) {
     return (
-      <main className="flex-1 min-h-screen pt-8 pb-16">
+      <main className="flex-1 max-w-2xl min-h-0 h-full overflow-y-auto app-scroll-container pt-8 pb-16">
         <p className="text-sm text-gray-500">Loading profile...</p>
       </main>
     );
@@ -57,7 +57,7 @@ export default function UserProfilePage() {
 
   if (!profile) {
     return (
-      <main className="flex-1 min-h-screen pt-8 pb-16">
+      <main className="flex-1 max-w-2xl min-h-0 h-full overflow-y-auto app-scroll-container pt-8 pb-16">
         <p className="text-sm text-red-400">User not found.</p>
       </main>
     );
@@ -66,7 +66,7 @@ export default function UserProfilePage() {
   const isOwnProfile = currentUser?.username === profile.username;
 
   return (
-    <main className="flex-1 max-w-2xl min-h-screen pt-8 pb-16">
+    <main className="flex-1 max-w-2xl min-h-0 h-full overflow-y-auto app-scroll-container pt-8 pb-16">
       <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 mb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-5">
@@ -82,13 +82,32 @@ export default function UserProfilePage() {
               </div>
             )}
             <div>
-              <h2 className="text-lg font-bold text-white">{profile.username}</h2>
+              <h2 className="text-lg font-bold text-white">
+                {profile.username}
+              </h2>
               <p className="text-sm text-gray-500">@{profile.username}</p>
-              {profile.bio && <p className="text-sm text-gray-400 mt-1">{profile.bio}</p>}
+              {profile.bio && (
+                <p className="text-sm text-gray-400 mt-1">{profile.bio}</p>
+              )}
               <div className="flex gap-4 mt-2 text-xs text-gray-500">
-                <span><span className="text-white font-semibold">{profile.posts_count || 0}</span> Posts</span>
-                <span><span className="text-white font-semibold">{profile.followers_count || 0}</span> Followers</span>
-                <span><span className="text-white font-semibold">{profile.following_count || 0}</span> Following</span>
+                <span>
+                  <span className="text-white font-semibold">
+                    {profile.posts_count || 0}
+                  </span>{" "}
+                  Posts
+                </span>
+                <span>
+                  <span className="text-white font-semibold">
+                    {profile.followers_count || 0}
+                  </span>{" "}
+                  Followers
+                </span>
+                <span>
+                  <span className="text-white font-semibold">
+                    {profile.following_count || 0}
+                  </span>{" "}
+                  Following
+                </span>
               </div>
             </div>
           </div>
@@ -121,7 +140,11 @@ export default function UserProfilePage() {
           posts.map((post) => (
             <PostCard
               key={post.id}
-              post={{ ...post, author_username: profile.username, author_id: profile.id }}
+              post={{
+                ...post,
+                author_username: profile.username,
+                author_id: profile.id,
+              }}
               currentUserId={currentUser?.id}
             />
           ))

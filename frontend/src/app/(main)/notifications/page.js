@@ -5,10 +5,18 @@ import { useRouter } from "next/navigation";
 import apiClient from "@/services/api";
 
 const typeConfig = {
-  FOLLOW:  { icon: "👤", color: "text-indigo-400", text: "started following you" },
-  COMMENT: { icon: "💬", color: "text-blue-400",   text: "commented on your post" },
-  LIKE:    { icon: "❤️", color: "text-red-400",    text: "liked your post" },
-  MESSAGE: { icon: "✉️", color: "text-green-400",  text: "sent you a message" },
+  FOLLOW: {
+    icon: "👤",
+    color: "text-indigo-400",
+    text: "started following you",
+  },
+  COMMENT: {
+    icon: "💬",
+    color: "text-blue-400",
+    text: "commented on your post",
+  },
+  LIKE: { icon: "❤️", color: "text-red-400", text: "liked your post" },
+  MESSAGE: { icon: "✉️", color: "text-green-400", text: "sent you a message" },
 };
 
 function timeAgo(dateStr) {
@@ -25,7 +33,8 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    apiClient.get("/users/notifications")
+    apiClient
+      .get("/users/notifications")
       .then((res) => setNotifications(Array.isArray(res.data) ? res.data : []))
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -40,7 +49,9 @@ export default function NotificationsPage() {
     if (!notification?.sender_username) return;
 
     if (notification.type === "MESSAGE") {
-      router.push(`/messages?user=${encodeURIComponent(notification.sender_username)}`);
+      router.push(
+        `/messages?user=${encodeURIComponent(notification.sender_username)}`,
+      );
       return;
     }
 
@@ -48,7 +59,7 @@ export default function NotificationsPage() {
   };
 
   return (
-    <main className="flex-1 max-w-2xl min-h-screen pt-8 pb-16">
+    <main className="flex-1 max-w-2xl min-h-0 h-full overflow-y-auto app-scroll-container pt-8 pb-16">
       <div className="border-b border-white/[0.06] pb-4 mb-6 flex items-center justify-between">
         <h1 className="text-xl font-bold text-white tracking-tight">
           Notifications
@@ -69,7 +80,11 @@ export default function NotificationsPage() {
       ) : (
         <div className="space-y-2">
           {notifications.map((n) => {
-            const cfg = typeConfig[n.type] || { icon: "🔔", color: "text-gray-400", text: "interacted with you" };
+            const cfg = typeConfig[n.type] || {
+              icon: "🔔",
+              color: "text-gray-400",
+              text: "interacted with you",
+            };
             return (
               <button
                 key={n.id}
@@ -83,8 +98,11 @@ export default function NotificationsPage() {
               >
                 <div className="flex-shrink-0">
                   {n.sender_avatar ? (
-                    <img src={n.sender_avatar} alt={n.sender_username}
-                      className="w-10 h-10 rounded-full object-cover" />
+                    <img
+                      src={n.sender_avatar}
+                      alt={n.sender_username}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center font-bold text-sm text-white uppercase">
                       {n.sender_username?.[0] || "U"}
@@ -96,8 +114,7 @@ export default function NotificationsPage() {
                   <p className="text-sm text-gray-200">
                     <span className="font-semibold text-white hover:text-indigo-300 transition-colors">
                       {n.sender_username}
-                    </span>
-                    {" "}
+                    </span>{" "}
                     <span className={cfg.color}>{cfg.text}</span>
                   </p>
                   {n.type === "COMMENT" && n.comment_text && (
@@ -110,7 +127,9 @@ export default function NotificationsPage() {
                       "{n.message_text}"
                     </p>
                   )}
-                  <p className="text-xs text-gray-600 mt-0.5">{timeAgo(n.created_at)}</p>
+                  <p className="text-xs text-gray-600 mt-0.5">
+                    {timeAgo(n.created_at)}
+                  </p>
                 </div>
 
                 <span className="text-xl flex-shrink-0">{cfg.icon}</span>

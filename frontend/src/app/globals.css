@@ -49,3 +49,27 @@ body {
 .animate-pulse-once {
   animation: highlight-in 0.5s ease-out;
 }
+
+.app-scroll-container {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 102, 241, 0.48) transparent;
+}
+
+.app-scroll-container::-webkit-scrollbar {
+  width: 10px;
+}
+
+.app-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.app-scroll-container::-webkit-scrollbar-thumb {
+  background-color: rgba(99, 102, 241, 0.48);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.app-scroll-container::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(99, 102, 241, 0.7);
+}

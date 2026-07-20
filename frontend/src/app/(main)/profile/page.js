@@ -173,14 +173,14 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <main className="flex-1 min-h-screen pt-8 pb-16">
+      <main className="flex-1 max-w-2xl min-h-0 h-full overflow-y-auto app-scroll-container pt-8 pb-16">
         <p className="text-sm text-gray-500">Loading profile...</p>
       </main>
     );
   }
 
   return (
-    <main className="w-full max-w-2xl min-h-screen pt-4 pb-24 sm:pt-6 lg:pt-8 lg:pb-16">
+    <main className="w-full max-w-2xl min-h-0 h-full overflow-y-auto app-scroll-container pt-4 pb-24 sm:pt-6 lg:pt-8 lg:pb-16">
       {/* Profile Header */}
       <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-4 sm:p-6 mb-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-5">

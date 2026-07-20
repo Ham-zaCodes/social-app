@@ -263,7 +263,7 @@ export default function MessagesPage() {
   );
 
   return (
-    <main className="flex-1 flex min-h-screen pt-4 pb-24 lg:pt-8 lg:pb-4 gap-0 max-w-4xl">
+    <main className="flex-1 flex min-h-0 h-full overflow-y-auto app-scroll-container pt-4 pb-24 lg:pt-8 lg:pb-4 gap-0 max-w-4xl">
       {!selectedUser ? (
         <div className="w-full flex flex-col gap-1">
           <h1 className="text-xl font-bold text-white tracking-tight mb-4 pb-4 border-b border-white/[0.06]">
