@@ -262,17 +262,6 @@ export default function MessagesPage() {
     (m) => !roomUsernames.has(m.username),
   );
 
-  useEffect(() => {
-    if (selectedUser || loadingMessages) return;
-    if (rooms.length > 0) {
-      openRoomChat(rooms[0]);
-      return;
-    }
-    if (mutualNotInRooms.length > 0) {
-      openChat(mutualNotInRooms[0]);
-    }
-  }, [rooms, mutuals, selectedUser, loadingMessages]);
-
   return (
     <main className="flex-1 flex min-h-screen pt-4 pb-24 lg:pt-8 lg:pb-4 gap-0 max-w-4xl">
       {!selectedUser ? (
