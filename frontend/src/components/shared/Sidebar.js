@@ -51,19 +51,27 @@ export default function Sidebar() {
           </span>
         </Link>
         {user && (
-          <Link href="/profile" className="flex items-center gap-2">
-            {user.avatar_url ? (
-              <img
-                src={user.avatar_url}
-                alt={user.username}
-                className="w-8 h-8 rounded-full object-cover border border-indigo-500/30"
-              />
-            ) : (
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 flex items-center justify-center font-bold text-xs text-white uppercase">
-                {user.username?.[0] || "U"}
-              </div>
-            )}
-          </Link>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={logout}
+              className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-1.5 text-[11px] font-semibold text-gray-300 hover:text-red-400 hover:bg-red-500/10"
+            >
+              Logout
+            </button>
+            <Link href="/profile" className="flex items-center gap-2">
+              {user.avatar_url ? (
+                <img
+                  src={user.avatar_url}
+                  alt={user.username}
+                  className="w-8 h-8 rounded-full object-cover border border-indigo-500/30"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 flex items-center justify-center font-bold text-xs text-white uppercase">
+                  {user.username?.[0] || "U"}
+                </div>
+              )}
+            </Link>
+          </div>
         )}
       </div>
 
