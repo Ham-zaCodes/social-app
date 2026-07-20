@@ -53,6 +53,7 @@ body {
 .app-scroll-container {
   scrollbar-width: thin;
   scrollbar-color: rgba(99, 102, 241, 0.48) transparent;
+  -webkit-overflow-scrolling: touch;
 }
 
 .app-scroll-container::-webkit-scrollbar {

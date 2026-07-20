@@ -43,9 +43,9 @@ export default function MainLayout({ children }) {
 
   return (
     <div className="h-screen w-full overflow-hidden bg-[#0B0F19] text-gray-100 selection:bg-indigo-500 selection:text-white">
-      <div className="mx-auto flex h-full w-full max-w-7xl flex-col px-3 sm:px-6 lg:flex-row lg:px-8 lg:gap-8">
+      <div className="mx-auto flex h-full min-h-0 w-full max-w-7xl flex-col px-3 sm:px-6 lg:flex-row lg:px-8 lg:gap-8">
         <Sidebar />
-        <div className="flex-1 min-w-0 h-full overflow-hidden pb-24 md:pb-0">
+        <div className="flex-1 min-w-0 h-full min-h-0 overflow-y-auto overflow-x-hidden pb-24 md:pb-0">
           {children}
         </div>
       </div>

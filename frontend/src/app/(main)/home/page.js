@@ -39,7 +39,7 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col gap-4 lg:flex-row lg:gap-6 lg:h-screen lg:min-h-0">
-      <main className="w-full max-w-2xl min-h-0 h-full overflow-y-auto app-scroll-container pt-4 pb-20 sm:pt-6 lg:pt-8 lg:pb-16">
+      <main className="w-full max-w-2xl min-h-0 flex-1 overflow-y-auto app-scroll-container pt-4 pb-24 sm:pt-6 lg:pt-8 lg:pb-16">
         <div className="border-b border-white/[0.06] pb-3 mb-4">
           <h1 className="text-lg font-bold text-white tracking-tight">
             Home Feed
