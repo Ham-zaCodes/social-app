@@ -42,10 +42,12 @@ export default function MainLayout({ children }) {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen w-full bg-[#0B0F19] text-gray-100 selection:bg-indigo-500 selection:text-white">
-      <div className="mx-auto flex w-full max-w-7xl flex-col px-3 sm:px-6 lg:flex-row lg:px-8 lg:gap-8">
+    <div className="h-screen w-full overflow-hidden bg-[#0B0F19] text-gray-100 selection:bg-indigo-500 selection:text-white">
+      <div className="mx-auto flex h-full w-full max-w-7xl flex-col px-3 sm:px-6 lg:flex-row lg:px-8 lg:gap-8">
         <Sidebar />
-        <div className="flex-1 min-w-0 pb-24 md:pb-0">{children}</div>
+        <div className="flex-1 min-w-0 h-full overflow-hidden pb-24 md:pb-0">
+          {children}
+        </div>
       </div>
     </div>
   );
